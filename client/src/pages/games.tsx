@@ -67,7 +67,7 @@ const Games: React.FC = () => {
         {gameItems.map((game) => (
           <div 
             key={game.id}
-            className={`game-card bg-card border border-white/5 rounded-xl overflow-hidden ${game.available ? 'cursor-pointer' : 'opacity-80'}`}
+            className={`game-card tg-ripple bg-card border border-white/5 rounded-xl overflow-hidden ${game.available ? 'cursor-pointer' : 'opacity-80'}`}
             onClick={() => game.available && setLocation(game.path)}
           >
             <div className="flex items-center p-4">

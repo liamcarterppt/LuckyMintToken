@@ -18,12 +18,16 @@ const SpinWheelPage: React.FC = () => {
       {/* Header with navigation */}
       <div className="flex items-center mb-6">
         <Link href="/games">
-          <a className="flex items-center mr-4 text-foreground/70 hover:text-foreground transition-colors">
-            <ArrowLeft className="h-5 w-5 mr-1" />
-            <span>Back</span>
+          <a className="flex items-center mr-4 text-foreground/70 hover:text-foreground transition-colors tg-ripple p-2 rounded-full">
+            <ArrowLeft className="h-5 w-5" />
           </a>
         </Link>
-        <h1 className="font-bold text-3xl">Spin Wheel</h1>
+        <h1 className="font-bold text-2xl">Spin Wheel</h1>
+        <div className="ml-auto flex items-center">
+          <div className="bg-primary/10 text-primary text-xs font-medium px-3 py-1.5 rounded-full">
+            Daily: <span className="font-bold">3 spins</span>
+          </div>
+        </div>
       </div>
       
       {/* Telegram Connect CTA */}

@@ -68,16 +68,68 @@
     @apply font-bold;
   }
   
+  /* Game card styles */
   .game-card {
-    @apply transition-all duration-300;
+    @apply transition-all duration-300 relative;
   }
   
-  .game-card:hover {
-    @apply transform -translate-y-1;
+  .game-card.cursor-pointer:hover {
+    @apply transform -translate-y-1 shadow-lg shadow-primary/10;
+  }
+  
+  .game-card.cursor-pointer:active {
+    @apply transform scale-95 -translate-y-0.5;
+  }
+  
+  /* Telegram-style ripple effect */
+  .tg-ripple {
+    @apply relative overflow-hidden;
+  }
+  
+  .tg-ripple::after {
+    content: "";
+    @apply absolute inset-0 bg-white/5 scale-0 rounded-full transition-transform duration-500 origin-center;
+    transform-origin: center;
+  }
+  
+  .tg-ripple:active::after {
+    @apply scale-150 opacity-0 transition-all;
+    transition: transform 0.5s, opacity 0.5s;
+  }
+  
+  /* Page transitions */
+  .page-enter {
+    @apply opacity-0 transform translate-x-2;
+  }
+  
+  .page-enter-active {
+    @apply opacity-100 transform translate-x-0 transition-all duration-300;
+  }
+  
+  .page-exit {
+    @apply opacity-100 transform translate-x-0;
+  }
+  
+  .page-exit-active {
+    @apply opacity-0 transform -translate-x-2 transition-all duration-300;
+  }
+  
+  /* Badge animation */
+  .badge-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
   }
   
   /* Custom animation for spin wheel */
   .spin-wheel {
-    transition: all 5s ease-out;
+    transition: all 5s cubic-bezier(0.25, 0.1, 0.25, 1);
   }
 }
