@@ -7,6 +7,8 @@ import { queryClient } from "./lib/queryClient";
 import Home from "@/pages/home";
 import Tasks from "@/pages/tasks";
 import Games from "@/pages/games";
+import SpinWheelPage from "@/pages/games/spinwheel";
+import QuizPage from "@/pages/games/quiz";
 import Leaderboard from "@/pages/leaderboard";
 import Profile from "@/pages/profile";
 import AdminDashboard from "@/pages/admin/index";
@@ -35,6 +37,8 @@ function Router() {
           <Route path="/" component={Home} />
           <Route path="/tasks" component={Tasks} />
           <Route path="/games" component={Games} />
+          <Route path="/games/spinwheel" component={SpinWheelPage} />
+          <Route path="/games/quiz" component={QuizPage} />
           <Route path="/leaderboard" component={Leaderboard} />
           <Route path="/profile" component={Profile} />
           <Route path="/admin" component={AdminDashboard} />
