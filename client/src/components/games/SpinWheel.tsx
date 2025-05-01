@@ -145,7 +145,7 @@ const SpinWheel: React.FC = () => {
                   const textY = 50 + 30 * Math.sin(textRad);
                   
                   return (
-                    <React.Fragment key={segment.id}>
+                    <g key={segment.id}>
                       <path d={path} fill={segment.color} />
                       <text 
                         x={textX} 
@@ -157,7 +157,7 @@ const SpinWheel: React.FC = () => {
                       >
                         {segment.text}
                       </text>
-                    </React.Fragment>
+                    </g>
                   );
                 })}
               </svg>
