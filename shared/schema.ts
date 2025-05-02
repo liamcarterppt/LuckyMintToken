@@ -136,6 +136,17 @@ export const systemSettings = pgTable("system_settings", {
   tokenSymbol: text("token_symbol").default("LKMT").notNull(),
   adminWalletAddress: text("admin_wallet_address"),
   referralReward: decimal("referral_reward", { precision: 15, scale: 3 }).default("75").notNull(),
+  dailyLoginBaseReward: decimal("daily_login_base_reward", { precision: 15, scale: 3 }).default("5").notNull(),
+  streakBonusMultiplier: decimal("streak_bonus_multiplier", { precision: 15, scale: 3 }).default("0.1").notNull(),
+  maxStreakDays: integer("max_streak_days").default(30).notNull(),
+  levelUpExperience: integer("level_up_experience").default(100).notNull(),
+  experienceMultiplier: decimal("experience_multiplier", { precision: 15, scale: 3 }).default("1.2").notNull(),
+  maxLevel: integer("max_level").default(100).notNull(),
+  predictionsEnabled: boolean("predictions_enabled").default(true).notNull(),
+  achievementsEnabled: boolean("achievements_enabled").default(true).notNull(),
+  dailyRewardsEnabled: boolean("daily_rewards_enabled").default(true).notNull(),
+  referralTierLevels: jsonb("referral_tier_levels").default(JSON.stringify([1, 5, 10, 25, 50])),
+  referralTierRewards: jsonb("referral_tier_rewards").default(JSON.stringify([10, 25, 50, 100, 200])),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
@@ -315,6 +326,47 @@ export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
   }),
 }));
 
+export const achievementsRelations = relations(achievements, ({ many }) => ({
+  userAchievements: many(userAchievements),
+}));
+
+export const userAchievementsRelations = relations(userAchievements, ({ one }) => ({
+  user: one(users, {
+    fields: [userAchievements.userId],
+    references: [users.id],
+  }),
+  achievement: one(achievements, {
+    fields: [userAchievements.achievementId],
+    references: [achievements.id],
+  }),
+}));
+
+export const dailyRewardsRelations = relations(dailyRewards, ({ many }) => ({
+  userDailyLogins: many(userDailyLogins),
+}));
+
+export const userDailyLoginsRelations = relations(userDailyLogins, ({ one }) => ({
+  user: one(users, {
+    fields: [userDailyLogins.userId],
+    references: [users.id],
+  }),
+}));
+
+export const predictionsRelations = relations(predictions, ({ many }) => ({
+  userPredictions: many(userPredictions),
+}));
+
+export const userPredictionsRelations = relations(userPredictions, ({ one }) => ({
+  user: one(users, {
+    fields: [userPredictions.userId],
+    references: [users.id],
+  }),
+  prediction: one(predictions, {
+    fields: [userPredictions.predictionId],
+    references: [predictions.id],
+  }),
+}));
+
 // Zod schemas for validation
 export const insertUserSchema = createInsertSchema(users, {
   username: (schema) => schema.min(3, "Username must be at least 3 characters"),
@@ -360,8 +412,8 @@ export type InsertUserQuizAnswer = z.infer<typeof insertUserQuizAnswerSchema>;
 export type UserQuizAnswer = typeof userQuizAnswers.$inferSelect;
 
 export const insertRewardTransactionSchema = createInsertSchema(rewardTransactions, {
-  type: (schema) => schema.refine((val: string) => ['task', 'spin', 'quiz', 'referral', 'manual'].includes(val),
-    "Type must be one of: task, spin, quiz, referral, manual"),
+  type: (schema) => schema.refine((val: string) => ['task', 'spin', 'quiz', 'referral', 'manual', 'login', 'achievement', 'prediction', 'streak'].includes(val),
+    "Type must be one of: task, spin, quiz, referral, manual, login, achievement, prediction, streak"),
   status: (schema) => schema.refine((val: string) => ['pending', 'processing', 'completed', 'failed'].includes(val),
     "Status must be one of: pending, processing, completed, failed"),
 });
@@ -373,8 +425,41 @@ export type InsertSystemSettings = z.infer<typeof insertSystemSettingsSchema>;
 export type SystemSettings = typeof systemSettings.$inferSelect;
 
 export const insertActivityLogSchema = createInsertSchema(activityLogs, {
-  type: (schema) => schema.refine((val: string) => ['task', 'spin', 'quiz', 'referral', 'claim', 'security_warning'].includes(val),
-    "Type must be one of: task, spin, quiz, referral, claim, security_warning"),
+  type: (schema) => schema.refine((val: string) => ['task', 'spin', 'quiz', 'referral', 'claim', 'security_warning', 'login', 'achievement', 'prediction'].includes(val),
+    "Type must be one of: task, spin, quiz, referral, claim, security_warning, login, achievement, prediction"),
 });
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 export type ActivityLog = typeof activityLogs.$inferSelect;
+
+export const insertAchievementSchema = createInsertSchema(achievements, {
+  title: (schema) => schema.min(3, "Title must be at least 3 characters"),
+  description: (schema) => schema.min(10, "Description must be at least 10 characters"),
+  type: (schema) => schema.refine((val: string) => ['login', 'task', 'spin', 'quiz', 'referral', 'level'].includes(val),
+    "Type must be one of: login, task, spin, quiz, referral, level"),
+});
+export type InsertAchievement = z.infer<typeof insertAchievementSchema>;
+export type Achievement = typeof achievements.$inferSelect;
+
+export const insertUserAchievementSchema = createInsertSchema(userAchievements);
+export type InsertUserAchievement = z.infer<typeof insertUserAchievementSchema>;
+export type UserAchievement = typeof userAchievements.$inferSelect;
+
+export const insertDailyRewardSchema = createInsertSchema(dailyRewards);
+export type InsertDailyReward = z.infer<typeof insertDailyRewardSchema>;
+export type DailyReward = typeof dailyRewards.$inferSelect;
+
+export const insertUserDailyLoginSchema = createInsertSchema(userDailyLogins);
+export type InsertUserDailyLogin = z.infer<typeof insertUserDailyLoginSchema>;
+export type UserDailyLogin = typeof userDailyLogins.$inferSelect;
+
+export const insertPredictionSchema = createInsertSchema(predictions, {
+  question: (schema) => schema.min(5, "Question must be at least 5 characters"),
+  status: (schema) => schema.refine((val: string) => ['active', 'locked', 'resolved', 'cancelled'].includes(val),
+    "Status must be one of: active, locked, resolved, cancelled"),
+});
+export type InsertPrediction = z.infer<typeof insertPredictionSchema>;
+export type Prediction = typeof predictions.$inferSelect;
+
+export const insertUserPredictionSchema = createInsertSchema(userPredictions);
+export type InsertUserPrediction = z.infer<typeof insertUserPredictionSchema>;
+export type UserPrediction = typeof userPredictions.$inferSelect;

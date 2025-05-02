@@ -858,6 +858,513 @@ class StorageService {
       } : null,
     };
   }
+  
+  // Daily Login Methods
+  async getDailyRewards() {
+    try {
+      return db.select().from(schema.dailyRewards).where(eq(schema.dailyRewards.isActive, true));
+    } catch (error) {
+      console.error('Error getting daily rewards:', error);
+      return [];
+    }
+  }
+  
+  async getDailyRewardByDay(day: number) {
+    try {
+      const reward = await db.select().from(schema.dailyRewards).where(eq(schema.dailyRewards.day, day)).limit(1);
+      return reward.length > 0 ? reward[0] : null;
+    } catch (error) {
+      console.error(`Error getting daily reward for day ${day}:`, error);
+      return null;
+    }
+  }
+  
+  async createDailyReward(reward: schema.InsertDailyReward) {
+    try {
+      const [newReward] = await db.insert(schema.dailyRewards).values(reward).returning();
+      return newReward;
+    } catch (error) {
+      console.error('Error creating daily reward:', error);
+      throw error;
+    }
+  }
+  
+  async updateDailyReward(id: number, data: Partial<schema.DailyReward>) {
+    try {
+      const [updatedReward] = await db.update(schema.dailyRewards)
+        .set({
+          ...data,
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.dailyRewards.id, id))
+        .returning();
+      
+      return updatedReward;
+    } catch (error) {
+      console.error('Error updating daily reward:', error);
+      throw error;
+    }
+  }
+  
+  async getUserDailyLogins(userId: number) {
+    try {
+      return db.select().from(schema.userDailyLogins)
+        .where(eq(schema.userDailyLogins.userId, userId))
+        .orderBy(desc(schema.userDailyLogins.loginDate));
+    } catch (error) {
+      console.error('Error getting user daily logins:', error);
+      return [];
+    }
+  }
+  
+  async getLastUserDailyLogin(userId: number) {
+    try {
+      const logins = await db.select().from(schema.userDailyLogins)
+        .where(eq(schema.userDailyLogins.userId, userId))
+        .orderBy(desc(schema.userDailyLogins.loginDate))
+        .limit(1);
+      
+      return logins.length > 0 ? logins[0] : null;
+    } catch (error) {
+      console.error('Error getting last user daily login:', error);
+      return null;
+    }
+  }
+  
+  async createUserDailyLogin(loginData: schema.InsertUserDailyLogin) {
+    try {
+      const [login] = await db.insert(schema.userDailyLogins).values(loginData).returning();
+      return login;
+    } catch (error) {
+      console.error('Error creating user daily login:', error);
+      throw error;
+    }
+  }
+  
+  async updateUserDailyLogin(id: number, data: Partial<schema.UserDailyLogin>) {
+    try {
+      const [updatedLogin] = await db.update(schema.userDailyLogins)
+        .set(data)
+        .where(eq(schema.userDailyLogins.id, id))
+        .returning();
+      
+      return updatedLogin;
+    } catch (error) {
+      console.error('Error updating user daily login:', error);
+      throw error;
+    }
+  }
+  
+  // Achievement Methods
+  async getAchievements() {
+    try {
+      return db.select().from(schema.achievements).where(eq(schema.achievements.isActive, true));
+    } catch (error) {
+      console.error('Error getting achievements:', error);
+      return [];
+    }
+  }
+  
+  async getAchievementsByType(type: string) {
+    try {
+      return db.select().from(schema.achievements)
+        .where(
+          and(
+            eq(schema.achievements.isActive, true),
+            eq(schema.achievements.type, type)
+          )
+        );
+    } catch (error) {
+      console.error(`Error getting achievements of type ${type}:`, error);
+      return [];
+    }
+  }
+  
+  async getAchievementById(id: number) {
+    try {
+      const achievement = await db.select().from(schema.achievements).where(eq(schema.achievements.id, id)).limit(1);
+      return achievement.length > 0 ? achievement[0] : null;
+    } catch (error) {
+      console.error(`Error getting achievement ${id}:`, error);
+      return null;
+    }
+  }
+  
+  async createAchievement(achievement: schema.InsertAchievement) {
+    try {
+      const [newAchievement] = await db.insert(schema.achievements).values(achievement).returning();
+      return newAchievement;
+    } catch (error) {
+      console.error('Error creating achievement:', error);
+      throw error;
+    }
+  }
+  
+  async updateAchievement(id: number, data: Partial<schema.Achievement>) {
+    try {
+      const [updatedAchievement] = await db.update(schema.achievements)
+        .set({
+          ...data,
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.achievements.id, id))
+        .returning();
+      
+      return updatedAchievement;
+    } catch (error) {
+      console.error('Error updating achievement:', error);
+      throw error;
+    }
+  }
+  
+  async getUserAchievements(userId: number) {
+    try {
+      return db.query.userAchievements.findMany({
+        where: eq(schema.userAchievements.userId, userId),
+        with: {
+          achievement: true,
+        },
+      });
+    } catch (error) {
+      console.error('Error getting user achievements:', error);
+      return [];
+    }
+  }
+  
+  async createUserAchievement(userAchievement: schema.InsertUserAchievement) {
+    try {
+      const [newUserAchievement] = await db.insert(schema.userAchievements).values(userAchievement).returning();
+      return newUserAchievement;
+    } catch (error) {
+      console.error('Error creating user achievement:', error);
+      throw error;
+    }
+  }
+  
+  async updateUserAchievement(id: number, data: Partial<schema.UserAchievement>) {
+    try {
+      const [updatedUserAchievement] = await db.update(schema.userAchievements)
+        .set(data)
+        .where(eq(schema.userAchievements.id, id))
+        .returning();
+      
+      return updatedUserAchievement;
+    } catch (error) {
+      console.error('Error updating user achievement:', error);
+      throw error;
+    }
+  }
+  
+  async hasUserUnlockedAchievement(userId: number, achievementId: number) {
+    try {
+      const result = await db.select({ count: count() })
+        .from(schema.userAchievements)
+        .where(
+          and(
+            eq(schema.userAchievements.userId, userId),
+            eq(schema.userAchievements.achievementId, achievementId)
+          )
+        );
+      
+      return result[0].count > 0;
+    } catch (error) {
+      console.error('Error checking if user has unlocked achievement:', error);
+      return false;
+    }
+  }
+  
+  // Prediction Game Methods
+  async getPredictions() {
+    try {
+      return db.select().from(schema.predictions).where(eq(schema.predictions.isActive, true));
+    } catch (error) {
+      console.error('Error getting predictions:', error);
+      return [];
+    }
+  }
+  
+  async getActivePredictions() {
+    try {
+      return db.select().from(schema.predictions)
+        .where(
+          and(
+            eq(schema.predictions.isActive, true),
+            eq(schema.predictions.status, 'active')
+          )
+        );
+    } catch (error) {
+      console.error('Error getting active predictions:', error);
+      return [];
+    }
+  }
+  
+  async getPredictionById(id: number) {
+    try {
+      const prediction = await db.select().from(schema.predictions).where(eq(schema.predictions.id, id)).limit(1);
+      return prediction.length > 0 ? prediction[0] : null;
+    } catch (error) {
+      console.error(`Error getting prediction ${id}:`, error);
+      return null;
+    }
+  }
+  
+  async createPrediction(prediction: schema.InsertPrediction) {
+    try {
+      const [newPrediction] = await db.insert(schema.predictions).values(prediction).returning();
+      return newPrediction;
+    } catch (error) {
+      console.error('Error creating prediction:', error);
+      throw error;
+    }
+  }
+  
+  async updatePrediction(id: number, data: Partial<schema.Prediction>) {
+    try {
+      const [updatedPrediction] = await db.update(schema.predictions)
+        .set({
+          ...data,
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.predictions.id, id))
+        .returning();
+      
+      return updatedPrediction;
+    } catch (error) {
+      console.error('Error updating prediction:', error);
+      throw error;
+    }
+  }
+  
+  async resolvePrediction(id: number, correctOption: number) {
+    try {
+      const [resolvedPrediction] = await db.update(schema.predictions)
+        .set({
+          status: 'resolved',
+          correctOption: correctOption,
+          resolveDate: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.predictions.id, id))
+        .returning();
+      
+      return resolvedPrediction;
+    } catch (error) {
+      console.error('Error resolving prediction:', error);
+      throw error;
+    }
+  }
+  
+  async getUserPredictions(userId: number) {
+    try {
+      return db.query.userPredictions.findMany({
+        where: eq(schema.userPredictions.userId, userId),
+        with: {
+          prediction: true,
+        },
+      });
+    } catch (error) {
+      console.error('Error getting user predictions:', error);
+      return [];
+    }
+  }
+  
+  async getUserPrediction(userId: number, predictionId: number) {
+    try {
+      const predictions = await db.query.userPredictions.findMany({
+        where: and(
+          eq(schema.userPredictions.userId, userId),
+          eq(schema.userPredictions.predictionId, predictionId)
+        ),
+        with: {
+          prediction: true,
+        },
+        limit: 1,
+      });
+      
+      return predictions.length > 0 ? predictions[0] : null;
+    } catch (error) {
+      console.error('Error getting user prediction:', error);
+      return null;
+    }
+  }
+  
+  async createUserPrediction(userPrediction: schema.InsertUserPrediction) {
+    try {
+      const [newUserPrediction] = await db.insert(schema.userPredictions).values(userPrediction).returning();
+      return newUserPrediction;
+    } catch (error) {
+      console.error('Error creating user prediction:', error);
+      throw error;
+    }
+  }
+  
+  async updateUserPredictionResults(predictionId: number, correctOption: number) {
+    try {
+      // First, mark all user predictions for this prediction with correct/incorrect
+      await db.update(schema.userPredictions)
+        .set({
+          isCorrect: eq(schema.userPredictions.selectedOption, correctOption),
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.userPredictions.predictionId, predictionId));
+      
+      // Get the prediction to determine the reward
+      const prediction = await this.getPredictionById(predictionId);
+      if (!prediction) throw new Error('Prediction not found');
+      
+      // Get all correct user predictions
+      const correctPredictions = await db.select()
+        .from(schema.userPredictions)
+        .where(
+          and(
+            eq(schema.userPredictions.predictionId, predictionId),
+            eq(schema.userPredictions.isCorrect, true)
+          )
+        );
+      
+      // Update each correct prediction with the reward
+      for (const userPrediction of correctPredictions) {
+        await db.update(schema.userPredictions)
+          .set({
+            reward: prediction.reward,
+            updatedAt: new Date(),
+          })
+          .where(eq(schema.userPredictions.id, userPrediction.id));
+        
+        // Create reward transaction
+        await this.createRewardTransaction({
+          userId: userPrediction.userId,
+          amount: prediction.reward,
+          type: 'prediction',
+          referenceId: userPrediction.id,
+          status: 'completed',
+        });
+        
+        // Update user balance
+        await this.updateUserLkmtBalance(userPrediction.userId, Number(prediction.reward));
+        
+        // Create activity log
+        await this.createActivityLog({
+          userId: userPrediction.userId,
+          type: 'prediction',
+          description: `Correct prediction on: ${prediction.question}`,
+          reward: Number(prediction.reward),
+          status: 'completed',
+          referenceId: userPrediction.id,
+        });
+      }
+      
+      return correctPredictions.length;
+    } catch (error) {
+      console.error('Error updating user prediction results:', error);
+      throw error;
+    }
+  }
+
+  // Level and Experience Methods
+  async updateUserExperience(userId: number, experiencePoints: number) {
+    try {
+      const user = await this.getUserById(userId);
+      if (!user) throw new Error('User not found');
+      
+      const settings = await this.getSystemSettings();
+      
+      // Calculate new experience and potential level up
+      const newExperience = user.experience + experiencePoints;
+      let newLevel = user.level;
+      let levelUp = false;
+      
+      // Experience required for next level increases with each level
+      // Using the formula: baseExp * (levelMultiplier ^ (currentLevel - 1))
+      const expForNextLevel = settings.levelUpExperience * Math.pow(
+        Number(settings.experienceMultiplier), 
+        user.level - 1
+      );
+      
+      // Check if user leveled up
+      if (newExperience >= expForNextLevel && user.level < settings.maxLevel) {
+        newLevel += 1;
+        levelUp = true;
+      }
+      
+      // Update user
+      const updatedUser = await db.update(schema.users)
+        .set({
+          experience: newExperience,
+          level: newLevel,
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.users.id, userId))
+        .returning();
+      
+      // If user leveled up, check if there are level achievements to unlock
+      if (levelUp) {
+        const levelAchievements = await this.getAchievementsByType('level');
+        
+        for (const achievement of levelAchievements) {
+          if (newLevel >= achievement.requirement) {
+            // Check if user already has this achievement
+            const hasAchievement = await this.hasUserUnlockedAchievement(userId, achievement.id);
+            
+            if (!hasAchievement) {
+              // Unlock achievement
+              await this.createUserAchievement({
+                userId,
+                achievementId: achievement.id,
+                isRewarded: false,
+              });
+              
+              // Create activity log
+              await this.createActivityLog({
+                userId,
+                type: 'achievement',
+                description: `Unlocked achievement: ${achievement.title}`,
+                status: 'completed',
+                referenceId: achievement.id,
+              });
+            }
+          }
+        }
+      }
+      
+      return {
+        user: updatedUser[0],
+        levelUp,
+        newLevel,
+        newExperience,
+      };
+    } catch (error) {
+      console.error('Error updating user experience:', error);
+      throw error;
+    }
+  }
+  
+  // Get level progress percentage (0-100)
+  async getUserLevelProgress(userId: number) {
+    try {
+      const user = await this.getUserById(userId);
+      if (!user) return 0;
+      
+      const settings = await this.getSystemSettings();
+      
+      // Experience required for current level
+      const expForCurrentLevel = user.level === 1 ? 0 : settings.levelUpExperience * 
+        Math.pow(Number(settings.experienceMultiplier), user.level - 2);
+      
+      // Experience required for next level
+      const expForNextLevel = settings.levelUpExperience * 
+        Math.pow(Number(settings.experienceMultiplier), user.level - 1);
+      
+      // Calculate progress percentage
+      const expInCurrentLevel = user.experience - expForCurrentLevel;
+      const expRequiredForLevelUp = expForNextLevel - expForCurrentLevel;
+      
+      return Math.min(100, Math.floor((expInCurrentLevel / expRequiredForLevelUp) * 100));
+    } catch (error) {
+      console.error('Error getting user level progress:', error);
+      return 0;
+    }
+  }
 }
 
 export const storage = new StorageService();
