@@ -138,12 +138,13 @@ export const systemSettings = pgTable("system_settings", {
 // Activity log
 export const activityLogs = pgTable("activity_logs", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
-  type: text("type").notNull(), // task, spin, quiz, referral, claim
+  userId: integer("user_id").references(() => users.id),
+  type: text("type").notNull(), // task, spin, quiz, referral, claim, security_warning
   description: text("description").notNull(),
   reward: decimal("reward", { precision: 15, scale: 3 }),
   status: text("status").notNull(),
   referenceId: integer("reference_id"),
+  ip: text("ip"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -290,8 +291,8 @@ export type InsertSystemSettings = z.infer<typeof insertSystemSettingsSchema>;
 export type SystemSettings = typeof systemSettings.$inferSelect;
 
 export const insertActivityLogSchema = createInsertSchema(activityLogs, {
-  type: (schema) => schema.refine((val: string) => ['task', 'spin', 'quiz', 'referral', 'claim'].includes(val),
-    "Type must be one of: task, spin, quiz, referral, claim"),
+  type: (schema) => schema.refine((val: string) => ['task', 'spin', 'quiz', 'referral', 'claim', 'security_warning'].includes(val),
+    "Type must be one of: task, spin, quiz, referral, claim, security_warning"),
 });
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 export type ActivityLog = typeof activityLogs.$inferSelect;

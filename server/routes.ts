@@ -7,6 +7,11 @@ import taskController from "./controllers/taskController";
 import gameController from "./controllers/gameController";
 import rewardController from "./controllers/rewardController";
 import adminController from "./controllers/adminController";
+import { 
+  generateClientSalt, 
+  handleSecurityReport,
+  getServerTime
+} from "./middleware/securityValidator";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
@@ -33,6 +38,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Stats routes
   app.get(`${apiPrefix}/stats`, userController.getPublicStats);
   app.get(`${apiPrefix}/stats/leaderboard`, userController.getLeaderboardStats);
+  app.get(`${apiPrefix}/stats/time`, getServerTime);
+  
+  // Security routes
+  app.get(`${apiPrefix}/security/salt`, generateClientSalt);
+  app.post(`${apiPrefix}/security/report`, handleSecurityReport);
   
   // Task routes
   app.get(`${apiPrefix}/tasks`, taskController.getAllTasks);
