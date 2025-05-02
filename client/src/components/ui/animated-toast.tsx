@@ -66,7 +66,7 @@ const AnimatedToast: React.FC<AnimatedToastProps> = ({
 }) => {
   const [visible, setVisible] = useState(true);
   const { play, muted, toggleMute } = useSoundEffects();
-  const { trigger } = useHapticFeedback();
+  const { triggerHaptic } = useHapticFeedback();
   
   const variantConfig = variantMap[variant];
   const Icon = variantConfig.icon;
@@ -74,7 +74,7 @@ const AnimatedToast: React.FC<AnimatedToastProps> = ({
   useEffect(() => {
     // Play sound and haptic feedback when toast appears
     play(variantConfig.sound as any);
-    trigger(variantConfig.haptic);
+    triggerHaptic(variantConfig.haptic as HapticFeedbackPattern);
     
     // Auto-dismiss toast after duration
     let timeoutId: NodeJS.Timeout | null = null;

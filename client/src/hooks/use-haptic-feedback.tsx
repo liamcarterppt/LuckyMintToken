@@ -1,7 +1,7 @@
 import { useCallback, useState, useEffect } from 'react';
 import { useMobile } from './use-mobile';
 
-type HapticFeedbackPattern = 'success' | 'error' | 'warning' | 'selection';
+export type HapticFeedbackPattern = 'success' | 'error' | 'warning' | 'selection' | 'short' | 'medium';
 
 /**
  * Hook for providing haptic feedback on mobile devices
@@ -35,6 +35,12 @@ export function useHapticFeedback() {
       case 'warning':
         navigator.vibrate([70, 50, 70]); // Two medium pulses
         break;
+      case 'short':
+        navigator.vibrate(15); // Very brief pulse
+        break;
+      case 'medium':
+        navigator.vibrate(50); // Medium pulse
+        break;
       case 'selection':
       default:
         navigator.vibrate(15); // Very brief pulse
@@ -44,7 +50,10 @@ export function useHapticFeedback() {
 
   return {
     triggerHaptic,
-    isSupported: vibrationSupported && isMobile
+    isSupported: vibrationSupported && isMobile,
+    // Compatibility aliases
+    trigger: triggerHaptic,
+    enabled: vibrationSupported && isMobile
   };
 }
 
