@@ -75,8 +75,56 @@ const userController = {
       // Update last login
       await storage.updateUserLastLogin(user.id);
       
+      // Check for daily login streak
+      const settings = await storage.getSystemSettings();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      // Get last login date
+      if (settings.dailyRewardsEnabled && (!user.lastLoginDate || new Date(user.lastLoginDate).getTime() !== today.getTime())) {
+        // If this is the first login today, handle streak
+        let streakBroken = false;
+        let currentStreak = 1; // Default to day 1
+        
+        if (user.lastLoginDate) {
+          const lastLoginDate = new Date(user.lastLoginDate);
+          lastLoginDate.setHours(0, 0, 0, 0);
+          
+          const yesterday = new Date(today);
+          yesterday.setDate(yesterday.getDate() - 1);
+          
+          // If last login was yesterday, continue streak
+          if (lastLoginDate.getTime() === yesterday.getTime()) {
+            currentStreak = user.consecutiveLogins + 1;
+            
+            // Cap streak at maxStreakDays
+            if (currentStreak > settings.maxStreakDays) {
+              currentStreak = 1; // Reset to day 1 after max days
+            }
+          } else {
+            // Streak broken
+            streakBroken = true;
+          }
+        }
+        
+        // Update user's streak and lastLoginDate
+        await storage.updateUser(user.id, {
+          consecutiveLogins: currentStreak,
+          lastLoginDate: new Date()
+        });
+        
+        // Award experience for login
+        await storage.updateUserExperience(user.id, 10); // 10 XP for daily login
+      }
+      
+      // Get updated user data
+      const updatedUser = await storage.getUserById(user.id);
+      if (!updatedUser) {
+        return res.status(500).json({ message: 'Failed to get updated user data' });
+      }
+      
       // Return user data (excluding password)
-      const { password: _, ...userData } = user;
+      const { password: _, ...userData } = updatedUser;
       return res.status(200).json(userData);
     } catch (error) {
       console.error('Login error:', error);
@@ -156,6 +204,48 @@ const userController = {
         
         // Update last login
         await storage.updateUserLastLogin(user.id);
+        
+        // Check for daily login streak
+        const settings = await storage.getSystemSettings();
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // Handle streak if daily rewards are enabled and this is the first login today
+        if (settings?.dailyRewardsEnabled && (!user.lastLoginDate || new Date(user.lastLoginDate).getTime() !== today.getTime())) {
+          // If this is the first login today, handle streak
+          let streakBroken = false;
+          let currentStreak = 1; // Default to day 1
+          
+          if (user.lastLoginDate) {
+            const lastLoginDate = new Date(user.lastLoginDate);
+            lastLoginDate.setHours(0, 0, 0, 0);
+            
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            // If last login was yesterday, continue streak
+            if (lastLoginDate.getTime() === yesterday.getTime()) {
+              currentStreak = user.consecutiveLogins + 1;
+              
+              // Cap streak at maxStreakDays
+              if (currentStreak > settings.maxStreakDays) {
+                currentStreak = 1; // Reset to day 1 after max days
+              }
+            } else {
+              // Streak broken
+              streakBroken = true;
+            }
+          }
+          
+          // Update user's streak and lastLoginDate
+          await storage.updateUser(user.id, {
+            consecutiveLogins: currentStreak,
+            lastLoginDate: new Date()
+          });
+          
+          // Award experience for login
+          await storage.updateUserExperience(user.id, 10); // 10 XP for daily login
+        }
         
         return res.status(200).json({ 
           success: true, 
@@ -283,6 +373,48 @@ const userController = {
         
         // Update last login
         await storage.updateUserLastLogin(user.id);
+        
+        // Check for daily login streak
+        const settings = await storage.getSystemSettings();
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // Handle streak if daily rewards are enabled and this is the first login today
+        if (settings?.dailyRewardsEnabled && (!user.lastLoginDate || new Date(user.lastLoginDate).getTime() !== today.getTime())) {
+          // If this is the first login today, handle streak
+          let streakBroken = false;
+          let currentStreak = 1; // Default to day 1
+          
+          if (user.lastLoginDate) {
+            const lastLoginDate = new Date(user.lastLoginDate);
+            lastLoginDate.setHours(0, 0, 0, 0);
+            
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            // If last login was yesterday, continue streak
+            if (lastLoginDate.getTime() === yesterday.getTime()) {
+              currentStreak = user.consecutiveLogins + 1;
+              
+              // Cap streak at maxStreakDays
+              if (currentStreak > settings.maxStreakDays) {
+                currentStreak = 1; // Reset to day 1 after max days
+              }
+            } else {
+              // Streak broken
+              streakBroken = true;
+            }
+          }
+          
+          // Update user's streak and lastLoginDate
+          await storage.updateUser(user.id, {
+            consecutiveLogins: currentStreak,
+            lastLoginDate: new Date()
+          });
+          
+          // Award experience for login
+          await storage.updateUserExperience(user.id, 10); // 10 XP for daily login
+        }
         
         return res.status(200).json({ 
           success: true, 
