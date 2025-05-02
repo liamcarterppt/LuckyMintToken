@@ -363,6 +363,27 @@ export function useAntiCheat(options: AntiCheatOptions = {}) {
     };
   }, [state.penaltyActive, state.penaltyEndTime, mergedOptions.applyPenalties]);
   
+  // Track suspicious activity
+  const trackSuspiciousActivity = useCallback((type: string, details: Record<string, any> = {}) => {
+    logViolation(type, `${type}: ${JSON.stringify(details)}`);
+    
+    // Report to server
+    try {
+      fetch('/api/security/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type,
+          details: JSON.stringify(details),
+          fingerprint,
+          violations: state.violations
+        })
+      }).catch(console.error);
+    } catch (error) {
+      console.warn('Failed to report suspicious activity:', error);
+    }
+  }, [fingerprint, logViolation, state.violations]);
+
   return {
     // State
     violations: state.violations,
@@ -377,6 +398,7 @@ export function useAntiCheat(options: AntiCheatOptions = {}) {
     checkActivityTiming,
     resetActivityTimer,
     logViolation,
+    trackSuspiciousActivity,
     isPenaltyActive
   };
 }
