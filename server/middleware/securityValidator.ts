@@ -113,7 +113,7 @@ async function logSecurityEvent(req: Request, type: string, details: string) {
     const ip = req.ip || req.socket.remoteAddress || 'unknown';
     
     await storage.createActivityLog({
-      userId,
+      userId: userId,
       type: 'security_warning',
       description: `${type}: ${details}`,
       status: 'active',
@@ -136,7 +136,7 @@ export const handleSecurityReport = async (req: Request, res: Response) => {
     
     // Log the violation
     await storage.createActivityLog({
-      userId,
+      userId: userId,
       type: 'security_warning',
       description: `Client reported ${type}: ${details || 'No details provided'}`,
       status: 'active',

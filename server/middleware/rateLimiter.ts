@@ -256,8 +256,8 @@ export const rateLimitPath = (path: string, options: RateLimitOptions = {
       storage.createActivityLog({
         userId: req.user?.id || null,
         type: 'security_warning',
-        action: 'path_rate_limit_exceeded',
-        details: `IP ${ip} exceeded rate limit for specific path: ${path}`,
+        description: `IP ${ip} exceeded rate limit for specific path: ${path}`,
+        status: 'active',
         ip: ip,
         createdAt: new Date()
       }).catch(console.error);
@@ -325,8 +325,8 @@ export const incrementalRateLimit = (key: string, maxAttempts: number = 5, baseB
       storage.createActivityLog({
         userId: req.user?.id || null,
         type: 'security_warning',
-        action: `${key}_attempt_blocked`,
-        details: `IP ${identifier} blocked due to too many failed ${key} attempts`,
+        description: `IP ${identifier} blocked due to too many failed ${key} attempts`,
+        status: 'active',
         ip: identifier,
         createdAt: new Date()
       }).catch(console.error);

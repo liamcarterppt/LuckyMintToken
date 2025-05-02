@@ -1,51 +1,51 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
+import { useMobile } from './use-mobile';
 
-type VibrationPattern = 'short' | 'medium' | 'long' | 'success' | 'error' | 'warning';
+type HapticFeedbackPattern = 'success' | 'error' | 'warning' | 'selection';
 
-const patterns: Record<VibrationPattern, number | number[]> = {
-  short: 10,
-  medium: 50,
-  long: 100,
-  success: [50, 30, 100],
-  error: [100, 30, 100, 30, 100],
-  warning: [30, 20, 30, 20, 30]
-};
-
+/**
+ * Hook for providing haptic feedback on mobile devices
+ * Falls back gracefully on desktop browsers
+ */
 export function useHapticFeedback() {
-  const [enabled, setEnabled] = useState<boolean>(() => {
-    // Try to load preference from localStorage
-    const savedPreference = localStorage.getItem('hapticFeedbackEnabled');
-    return savedPreference ? savedPreference === 'true' : true;
-  });
-  
-  const [isSupported, setIsSupported] = useState<boolean>(false);
-  
+  const [vibrationSupported, setVibrationSupported] = useState(false);
+  const { isMobile } = useMobile();
+
   useEffect(() => {
-    // Check if vibration is supported
-    setIsSupported('vibrate' in navigator);
-    
-    // Save enabled preference when it changes
-    localStorage.setItem('hapticFeedbackEnabled', enabled.toString());
-  }, [enabled]);
-  
-  const trigger = useCallback((pattern: VibrationPattern = 'short') => {
-    if (!enabled || !isSupported) return;
-    
-    try {
-      navigator.vibrate(patterns[pattern]);
-    } catch (error) {
-      console.warn('Failed to trigger haptic feedback:', error);
+    // Check if vibration API is supported
+    if ('vibrate' in navigator) {
+      setVibrationSupported(true);
     }
-  }, [enabled, isSupported]);
-  
-  const toggleEnabled = useCallback(() => {
-    setEnabled(prev => !prev);
   }, []);
-  
-  return { trigger, enabled, toggleEnabled, isSupported };
+
+  /**
+   * Trigger haptic feedback with different patterns
+   */
+  const triggerHaptic = useCallback((pattern: HapticFeedbackPattern = 'selection') => {
+    if (!vibrationSupported || !isMobile) return;
+
+    // Different patterns for different feedback types
+    switch (pattern) {
+      case 'success':
+        navigator.vibrate([50, 50, 100]); // Short-pause-longer
+        break;
+      case 'error':
+        navigator.vibrate([100, 50, 100, 50, 100]); // Three pulses
+        break;
+      case 'warning':
+        navigator.vibrate([70, 50, 70]); // Two medium pulses
+        break;
+      case 'selection':
+      default:
+        navigator.vibrate(15); // Very brief pulse
+        break;
+    }
+  }, [vibrationSupported, isMobile]);
+
+  return {
+    triggerHaptic,
+    isSupported: vibrationSupported && isMobile
+  };
 }
 
-// To use this hook:
-// const { trigger, enabled, toggleEnabled, isSupported } = useHapticFeedback();
-// trigger('success'); // To trigger haptic feedback
-// <button onClick={toggleEnabled} disabled={!isSupported}>{enabled ? 'Disable' : 'Enable'} haptics</button>
+export default useHapticFeedback;
