@@ -331,29 +331,54 @@ class StorageService {
   }
   
   async countCompletedTasks(userId: number) {
-    const [{ count }] = await db.select({ count: count() })
-      .from(schema.userTasks)
-      .where(
-        and(
-          eq(schema.userTasks.userId, userId),
-          sql`${schema.userTasks.status} IN ('completed', 'verified')`
-        )
-      );
-    
-    return Number(count);
+    try {
+      const result = await db.select({ count: count() })
+        .from(schema.userTasks)
+        .where(
+          and(
+            eq(schema.userTasks.userId, userId),
+            sql`${schema.userTasks.status} IN ('completed', 'verified')`
+          )
+        );
+      
+      if (result && result.length > 0) {
+        return Number(result[0].count);
+      }
+      return 0;
+    } catch (error) {
+      console.error('Error counting completed tasks:', error);
+      return 0;
+    }
   }
   
   async countTotalTasks() {
-    const [{ count }] = await db.select({ count: count() }).from(schema.tasks);
-    return Number(count);
+    try {
+      const result = await db.select({ count: count() }).from(schema.tasks);
+      
+      if (result && result.length > 0) {
+        return Number(result[0].count);
+      }
+      return 0;
+    } catch (error) {
+      console.error('Error counting total tasks:', error);
+      return 0;
+    }
   }
   
   async countActiveTasks() {
-    const [{ count }] = await db.select({ count: count() })
-      .from(schema.tasks)
-      .where(eq(schema.tasks.isActive, true));
-    
-    return Number(count);
+    try {
+      const result = await db.select({ count: count() })
+        .from(schema.tasks)
+        .where(eq(schema.tasks.isActive, true));
+      
+      if (result && result.length > 0) {
+        return Number(result[0].count);
+      }
+      return 0;
+    } catch (error) {
+      console.error('Error counting active tasks:', error);
+      return 0;
+    }
   }
   
   async getTaskCompletionRate() {
@@ -495,16 +520,24 @@ class StorageService {
   }
   
   async countCorrectQuizAnswers(userId: number) {
-    const [{ count }] = await db.select({ count: count() })
-      .from(schema.userQuizAnswers)
-      .where(
-        and(
-          eq(schema.userQuizAnswers.userId, userId),
-          eq(schema.userQuizAnswers.isCorrect, true)
-        )
-      );
-    
-    return Number(count);
+    try {
+      const result = await db.select({ count: count() })
+        .from(schema.userQuizAnswers)
+        .where(
+          and(
+            eq(schema.userQuizAnswers.userId, userId),
+            eq(schema.userQuizAnswers.isCorrect, true)
+          )
+        );
+      
+      if (result && result.length > 0) {
+        return Number(result[0].count);
+      }
+      return 0;
+    } catch (error) {
+      console.error('Error counting correct quiz answers:', error);
+      return 0;
+    }
   }
   
   // Reward methods
