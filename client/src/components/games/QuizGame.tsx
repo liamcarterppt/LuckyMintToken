@@ -1,10 +1,28 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useGame } from '@/providers/GameProvider';
-import { CheckIcon, XIcon, ClockIcon, Brain, ZapIcon, SkipForward } from 'lucide-react';
+import { 
+  CheckIcon, 
+  XIcon, 
+  ClockIcon, 
+  Brain, 
+  ZapIcon, 
+  SkipForward, 
+  Volume2, 
+  VolumeX,
+  AlertCircle,
+  ShieldAlert
+} from 'lucide-react';
 import FloatingActionButton from '@/components/ui/floating-action-button';
 import PullToRefresh from '@/components/ui/pull-to-refresh';
 import MessageBubble from '@/components/ui/message-bubble';
+import TelegramHeader from '@/components/layout/TelegramHeader';
+import TypingIndicator from '@/components/ui/typing-indicator';
+import { useSoundEffects } from '@/hooks/use-sound-effects';
+import { useHapticFeedback } from '@/hooks/use-haptic-feedback';
+import { useAntiCheat } from '@/hooks/use-anti-cheat';
+import { useToast } from '@/hooks/use-toast';
+import AnimatedToast from '@/components/ui/animated-toast';
 
 const QuizGame: React.FC = () => {
   const { 
