@@ -91,7 +91,7 @@ const QuizGame: React.FC = () => {
     
     // Sound & haptic feedback
     play('click');
-    trigger('short');
+    triggerHaptic('short');
     
     setSelectedOption(optionIndex);
   };
@@ -165,7 +165,7 @@ const QuizGame: React.FC = () => {
     } else {
       // User selected wrong answer, but they don't know yet
       play('click');
-      trigger('short');
+      triggerHaptic('short');
     }
     
     try {
@@ -181,7 +181,7 @@ const QuizGame: React.FC = () => {
       if (result) {
         // Correct answer
         play('success');
-        trigger('success');
+        triggerHaptic('success');
         
         setCustomToast({
           visible: true,
@@ -192,7 +192,7 @@ const QuizGame: React.FC = () => {
       } else {
         // Wrong answer
         play('error');
-        trigger('error');
+        triggerHaptic('error');
       }
     } catch (error) {
       console.error('Error submitting quiz answer:', error);
@@ -215,7 +215,7 @@ const QuizGame: React.FC = () => {
     
     // Sound & haptic feedback
     play('click');
-    trigger('short');
+    triggerHaptic('short');
     
     // Move to next question
     nextQuizQuestion();
@@ -235,7 +235,7 @@ const QuizGame: React.FC = () => {
     
     // Sound & haptic feedback
     play('click');
-    trigger('short');
+    triggerHaptic('short');
     
     // Move to next question
     nextQuizQuestion();
@@ -268,7 +268,7 @@ const QuizGame: React.FC = () => {
   // Handle refresh
   const handleRefresh = async () => {
     play('notification');
-    trigger('medium');
+    triggerHaptic('medium');
     setIsTyping(true);
     
     try {
