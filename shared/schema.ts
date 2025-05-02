@@ -20,6 +20,10 @@ export const users = pgTable("users", {
   referredBy: integer("referred_by").references(() => users.id),
   isAdmin: boolean("is_admin").default(false).notNull(),
   isBanned: boolean("is_banned").default(false).notNull(),
+  level: integer("level").default(1).notNull(),
+  experience: integer("experience").default(0).notNull(),
+  consecutiveLogins: integer("consecutive_logins").default(0).notNull(),
+  lastLoginDate: timestamp("last_login_date"),
   lastLogin: timestamp("last_login"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -135,11 +139,86 @@ export const systemSettings = pgTable("system_settings", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Achievements
+export const achievements = pgTable("achievements", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  type: text("type").notNull(), // login, task, spin, quiz, referral, level
+  requirement: integer("requirement").notNull(), // Number of actions required
+  reward: decimal("reward", { precision: 15, scale: 3 }).notNull(),
+  icon: text("icon"),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// User achievements
+export const userAchievements = pgTable("user_achievements", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  achievementId: integer("achievement_id").notNull().references(() => achievements.id),
+  unlockedAt: timestamp("unlocked_at").defaultNow().notNull(),
+  isRewarded: boolean("is_rewarded").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Daily login rewards
+export const dailyRewards = pgTable("daily_rewards", {
+  id: serial("id").primaryKey(),
+  day: integer("day").notNull(), // Day in streak (1-30)
+  reward: decimal("reward", { precision: 15, scale: 3 }).notNull(),
+  description: text("description").notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// User daily logins
+export const userDailyLogins = pgTable("user_daily_logins", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  loginDate: timestamp("login_date").defaultNow().notNull(),
+  day: integer("day").notNull(), // Current day in streak
+  reward: decimal("reward", { precision: 15, scale: 3 }).notNull(),
+  isRewarded: boolean("is_rewarded").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Prediction game
+export const predictions = pgTable("predictions", {
+  id: serial("id").primaryKey(),
+  question: text("question").notNull(),
+  description: text("description"),
+  options: jsonb("options").notNull(), // Array of options
+  correctOption: integer("correct_option"), // Set after the event happens
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  resolveDate: timestamp("resolve_date"),
+  status: text("status").notNull(), // active, locked, resolved, cancelled
+  reward: decimal("reward", { precision: 15, scale: 3 }).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// User predictions
+export const userPredictions = pgTable("user_predictions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  predictionId: integer("prediction_id").notNull().references(() => predictions.id),
+  selectedOption: integer("selected_option").notNull(),
+  isCorrect: boolean("is_correct"),
+  reward: decimal("reward", { precision: 15, scale: 3 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Activity log
 export const activityLogs = pgTable("activity_logs", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id),
-  type: text("type").notNull(), // task, spin, quiz, referral, claim, security_warning
+  type: text("type").notNull(), // task, spin, quiz, referral, claim, security_warning, login, achievement, prediction
   description: text("description").notNull(),
   reward: decimal("reward", { precision: 15, scale: 3 }),
   status: text("status").notNull(),
@@ -155,6 +234,9 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   quizAnswers: many(userQuizAnswers),
   rewardTransactions: many(rewardTransactions),
   activityLogs: many(activityLogs),
+  achievements: many(userAchievements),
+  dailyLogins: many(userDailyLogins),
+  predictions: many(userPredictions),
   referrer: one(users, {
     fields: [users.referredBy],
     references: [users.id],
