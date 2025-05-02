@@ -213,6 +213,11 @@ const predictionController = {
         isActive: true,
       });
       
+      // Broadcast update to all connected clients
+      if ((global as any).broadcastPredictionUpdate) {
+        await (global as any).broadcastPredictionUpdate();
+      }
+      
       return res.status(201).json(newPrediction);
     } catch (error) {
       console.error('Error creating prediction:', error);
@@ -243,6 +248,11 @@ const predictionController = {
           status: status !== undefined ? status : undefined,
           isActive: isActive !== undefined ? isActive : undefined,
         });
+        
+        // Broadcast update to all connected clients
+        if ((global as any).broadcastPredictionUpdate) {
+          await (global as any).broadcastPredictionUpdate();
+        }
         
         return res.status(200).json(updatedPrediction);
       } else {
@@ -296,6 +306,11 @@ const predictionController = {
       // Update user predictions and award rewards
       const updatedCount = await storage.updateUserPredictionResults(Number(id), correctOption);
       
+      // Broadcast update to all connected clients
+      if ((global as any).broadcastPredictionUpdate) {
+        await (global as any).broadcastPredictionUpdate();
+      }
+      
       return res.status(200).json({
         success: true,
         prediction: resolvedPrediction,
@@ -332,6 +347,11 @@ const predictionController = {
         status: 'cancelled',
         updatedAt: new Date(),
       });
+      
+      // Broadcast update to all connected clients
+      if ((global as any).broadcastPredictionUpdate) {
+        await (global as any).broadcastPredictionUpdate();
+      }
       
       return res.status(200).json({
         success: true,
