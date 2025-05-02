@@ -186,16 +186,32 @@ class StorageService {
   }
   
   async countUsers() {
-    const [{ count }] = await db.select({ count: count() }).from(schema.users);
-    return Number(count);
+    try {
+      const result = await db.select({ count: count() }).from(schema.users);
+      if (result && result.length > 0) {
+        return Number(result[0].count);
+      }
+      return 0;
+    } catch (error) {
+      console.error('Error counting users:', error);
+      return 0;
+    }
   }
   
   async countWalletConnectedUsers() {
-    const [{ count }] = await db.select({ count: count() })
-      .from(schema.users)
-      .where(sql`${schema.users.walletAddress} IS NOT NULL`);
-    
-    return Number(count);
+    try {
+      const result = await db.select({ count: count() })
+        .from(schema.users)
+        .where(sql`${schema.users.walletAddress} IS NOT NULL`);
+      
+      if (result && result.length > 0) {
+        return Number(result[0].count);
+      }
+      return 0;
+    } catch (error) {
+      console.error('Error counting wallet connected users:', error);
+      return 0;
+    }
   }
   
   async getUserReferrals(userId: number) {
@@ -204,11 +220,19 @@ class StorageService {
   }
   
   async countUserReferrals(userId: number) {
-    const [{ count }] = await db.select({ count: count() })
-      .from(schema.users)
-      .where(eq(schema.users.referredBy, userId));
-    
-    return Number(count);
+    try {
+      const result = await db.select({ count: count() })
+        .from(schema.users)
+        .where(eq(schema.users.referredBy, userId));
+      
+      if (result && result.length > 0) {
+        return Number(result[0].count);
+      }
+      return 0;
+    } catch (error) {
+      console.error('Error counting user referrals:', error);
+      return 0;
+    }
   }
   
   // Task methods
