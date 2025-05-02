@@ -40,46 +40,224 @@ const QuizGame: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [showResult, setShowResult] = useState<boolean>(false);
   const [isCorrect, setIsCorrect] = useState<boolean>(false);
+  const [isTyping, setIsTyping] = useState<boolean>(false);
+  const [showSecurityWarning, setShowSecurityWarning] = useState<boolean>(false);
+  const [customToast, setCustomToast] = useState<{
+    visible: boolean;
+    title: string;
+    message?: string;
+    variant: 'success' | 'error' | 'warning' | 'info';
+  }>({ visible: false, title: '', variant: 'info' });
+  
+  // Initialize hooks
+  const { play, muted, toggleMute } = useSoundEffects();
+  const { trigger, enabled: hapticEnabled } = useHapticFeedback();
+  const { toast } = useToast();
+  const answerTimeRef = useRef<number | null>(null);
+  
+  // Anti-cheat system
+  const { 
+    trackInput, 
+    startActivityTimer, 
+    checkActivityTiming, 
+    isPenaltyActive,
+    logViolation 
+  } = useAntiCheat({
+    enableAll: true,
+    trackFocusChange: true,
+    trackDevTools: true,
+    trackRapidInput: true,
+    trackSuspiciousTimings: true,
+    applyPenalties: true
+  });
   
   // Load quiz questions on component mount
   useEffect(() => {
     loadQuizQuestions();
+    
+    // Show simulated typing when component mounts
+    setIsTyping(true);
+    setTimeout(() => {
+      setIsTyping(false);
+    }, 1500);
   }, []);
   
-  // Handle option selection
+  // Handle option selection with sound and haptic feedback
   const handleOptionSelect = (optionIndex: number) => {
     if (isSubmitting || showResult) return;
+    
+    // Anti-cheat: Track input pattern for bots detection
+    trackInput('option_select');
+    
+    // Sound & haptic feedback
+    play('click');
+    trigger('short');
+    
     setSelectedOption(optionIndex);
   };
   
-  // Handle answer submission
+  // Start tracking question time when a new question is shown
+  useEffect(() => {
+    if (currentQuizQuestion && !showResult) {
+      // Start tracking answer time
+      answerTimeRef.current = Date.now();
+      
+      // Start anti-cheat activity timer
+      startActivityTimer();
+      
+      // Show simulated typing effect
+      setIsTyping(true);
+      setTimeout(() => {
+        setIsTyping(false);
+      }, 1000);
+    }
+  }, [currentQuizQuestion, showResult, startActivityTimer]);
+  
+  // Handle answer submission with anti-cheat measures
   const handleSubmit = async () => {
     if (selectedOption === null || !currentQuizQuestion || isSubmitting) return;
     
+    // Anti-cheat: Check for penalty
+    if (isPenaltyActive()) {
+      setCustomToast({
+        visible: true,
+        title: 'Account Restricted',
+        message: 'Suspicious activity detected. Please try again later.',
+        variant: 'error'
+      });
+      return;
+    }
+    
+    // Anti-cheat: Check for suspiciously fast answers
+    if (answerTimeRef.current) {
+      const answerTime = Date.now() - answerTimeRef.current;
+      // If answering too quickly (less than 1.5 seconds) - flag as suspicious
+      if (answerTime < 1500) {
+        logViolation('fast_answer', `Answered in ${answerTime}ms, minimum expected time is 1500ms`);
+        
+        // Show security warning
+        setShowSecurityWarning(true);
+        
+        // Wait for 2 seconds before allowing submission
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        setShowSecurityWarning(false);
+      }
+    }
+    
+    // Check activity timing from anti-cheat system
+    if (checkActivityTiming(1500)) {
+      setCustomToast({
+        visible: true,
+        title: 'Too Fast!',
+        message: 'Please take time to read the question before answering.',
+        variant: 'warning'
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
     
-    const result = await submitQuizAnswer(
-      currentQuizQuestion.id,
-      selectedOption
-    );
+    // Sound & haptic feedback based on confidence
+    if (selectedOption === currentQuizQuestion.correctAnswer) {
+      // User selected correct answer, but they don't know yet
+      play('notification');
+      trigger('medium');
+    } else {
+      // User selected wrong answer, but they don't know yet
+      play('click');
+      trigger('short');
+    }
     
-    setIsCorrect(result);
-    setShowResult(true);
-    setIsSubmitting(false);
+    try {
+      const result = await submitQuizAnswer(
+        currentQuizQuestion.id,
+        selectedOption
+      );
+      
+      setIsCorrect(result);
+      setShowResult(true);
+      
+      // Sound & haptic feedback for result
+      if (result) {
+        // Correct answer
+        play('success');
+        trigger('success');
+        
+        setCustomToast({
+          visible: true,
+          title: 'Correct Answer!',
+          message: `You earned ${currentQuizQuestion.reward} $LKMT tokens!`,
+          variant: 'success'
+        });
+      } else {
+        // Wrong answer
+        play('error');
+        trigger('error');
+      }
+    } catch (error) {
+      console.error('Error submitting quiz answer:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to submit your answer. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   // Handle moving to the next question
   const handleNext = () => {
+    // Reset state
     setSelectedOption(null);
     setShowResult(false);
+    setIsTyping(true);
+    
+    // Sound & haptic feedback
+    play('click');
+    trigger('short');
+    
+    // Move to next question
     nextQuizQuestion();
+    
+    // Hide typing indicator after a delay
+    setTimeout(() => {
+      setIsTyping(false);
+    }, 1000);
   };
   
   // Skip current question
   const handleSkip = () => {
+    // Reset state
     setSelectedOption(null);
     setShowResult(false);
+    setIsTyping(true);
+    
+    // Sound & haptic feedback
+    play('click');
+    trigger('short');
+    
+    // Move to next question
     nextQuizQuestion();
+    
+    // Hide typing indicator after a delay
+    setTimeout(() => {
+      setIsTyping(false);
+    }, 1000);
+  };
+  
+  // Custom toast close handler
+  const handleCloseCustomToast = () => {
+    setCustomToast(prev => ({ ...prev, visible: false }));
+  };
+  
+  // Sound toggle handler
+  const handleToggleSound = () => {
+    toggleMute();
+    toast({
+      title: muted ? 'Sound Enabled' : 'Sound Disabled',
+      description: muted ? 'Game sounds have been turned on.' : 'Game sounds have been muted.',
+    });
   };
   
   // Calculate statistics
@@ -89,7 +267,17 @@ const QuizGame: React.FC = () => {
   
   // Handle refresh
   const handleRefresh = async () => {
-    return loadQuizQuestions();
+    play('notification');
+    trigger('medium');
+    setIsTyping(true);
+    
+    try {
+      await loadQuizQuestions();
+    } finally {
+      setTimeout(() => {
+        setIsTyping(false);
+      }, 1000);
+    }
   };
 
   if (isQuizLoading) {
@@ -128,6 +316,21 @@ const QuizGame: React.FC = () => {
 
   return (
     <PullToRefresh onRefresh={handleRefresh} className="relative">
+      {/* Telegram-style header */}
+      <TelegramHeader 
+        title="Quiz Game" 
+        subtitle="Earn $LKMT by answering correctly"
+        actions={
+          <button 
+            onClick={handleToggleSound}
+            className="p-1.5 rounded-full hover:bg-white/10 transition-colors active:scale-95"
+            aria-label={muted ? "Unmute" : "Mute"}
+          >
+            {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+          </button>
+        }
+      />
+
       <div className="bg-card rounded-xl p-6 border border-white/5">
         <div className="text-center mb-6">
           <h3 className="font-semibold text-xl mb-2">Test Your Crypto Knowledge</h3>
@@ -154,6 +357,13 @@ const QuizGame: React.FC = () => {
             type="incoming"
             className="mb-5 transform transition-all duration-300"
           />
+          
+          {/* Typing indicator for realistic effect */}
+          {isTyping && (
+            <div className="mb-4 ml-2">
+              <TypingIndicator text="Generating options..." />
+            </div>
+          )}
           
           {/* Answer options */}
           <div className="space-y-3">
@@ -183,7 +393,7 @@ const QuizGame: React.FC = () => {
                   key={index}
                   className={buttonStyle}
                   onClick={() => handleOptionSelect(index)}
-                  disabled={isSubmitting || showResult}
+                  disabled={isSubmitting || showResult || isTyping}
                 >
                   <div className="flex items-center">
                     <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-white/5 mr-2 text-sm">
@@ -196,6 +406,21 @@ const QuizGame: React.FC = () => {
             })}
           </div>
         </div>
+        
+        {/* Security warning for suspicious activity */}
+        {showSecurityWarning && (
+          <MessageBubble 
+            content={
+              <div className="flex items-center">
+                <ShieldAlert className="h-5 w-5 mr-2 text-warning" />
+                <span>Security check: Please wait a moment before submitting.</span>
+              </div>
+            }
+            type="system"
+            variant="warning"
+            className="mb-4 animate-pulse"
+          />
+        )}
         
         {/* Result feedback */}
         {showResult && (
@@ -224,7 +449,7 @@ const QuizGame: React.FC = () => {
           {showResult ? (
             <Button 
               onClick={handleNext}
-              className="bg-accent hover:bg-accent/90 text-white tg-ripple"
+              className="bg-accent hover:bg-accent/90 text-white tg-ripple transform transition-all hover:scale-105 active:scale-95"
             >
               Next Question
             </Button>
@@ -233,17 +458,26 @@ const QuizGame: React.FC = () => {
               <Button 
                 onClick={handleSkip}
                 variant="outline"
-                className="border-white/10 tg-ripple flex items-center"
+                className="border-white/10 tg-ripple flex items-center transform transition-all hover:scale-105 active:scale-95"
+                disabled={isTyping}
               >
                 <SkipForward className="h-4 w-4 mr-1" />
                 Skip
               </Button>
               <Button 
                 onClick={handleSubmit}
-                disabled={selectedOption === null || isSubmitting}
-                className="bg-accent hover:bg-accent/90 text-white tg-ripple"
+                disabled={selectedOption === null || isSubmitting || isTyping}
+                className="bg-accent hover:bg-accent/90 text-white tg-ripple transform transition-all hover:scale-105 active:scale-95"
               >
-                {isSubmitting ? 'Submitting...' : 'Submit Answer'}
+                {isSubmitting ? (
+                  <span className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Submitting...
+                  </span>
+                ) : 'Submit Answer'}
               </Button>
             </div>
           )}
@@ -288,13 +522,32 @@ const QuizGame: React.FC = () => {
         </div>
       </div>
       
-      {/* Floating action button for skipping */}
-      {!showResult && (
+      {/* Floating action buttons */}
+      <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-30">
+        {!showResult && !isTyping && (
+          <FloatingActionButton
+            icon={<SkipForward className="h-6 w-6" />}
+            onClick={handleSkip}
+            label="Skip Question"
+            color="secondary"
+          />
+        )}
         <FloatingActionButton
-          icon={<SkipForward className="h-6 w-6" />}
-          onClick={handleSkip}
-          label="Skip Question"
-          color="secondary"
+          icon={muted ? <VolumeX className="h-6 w-6" /> : <Volume2 className="h-6 w-6" />}
+          onClick={handleToggleSound}
+          label={muted ? "Unmute" : "Mute Sounds"}
+          color="primary"
+        />
+      </div>
+      
+      {/* Animated toast for success/error messages */}
+      {customToast.visible && (
+        <AnimatedToast
+          title={customToast.title}
+          message={customToast.message}
+          variant={customToast.variant}
+          onClose={handleCloseCustomToast}
+          showMuteToggle={true}
         />
       )}
     </PullToRefresh>
