@@ -19,7 +19,7 @@ import MessageBubble from '@/components/ui/message-bubble';
 import TelegramHeader from '@/components/layout/TelegramHeader';
 import TypingIndicator from '@/components/ui/typing-indicator';
 import { useSoundEffects } from '@/hooks/use-sound-effects';
-import { useHapticFeedback } from '@/hooks/use-haptic-feedback';
+import { useHapticFeedback, HapticFeedbackPattern } from '@/hooks/use-haptic-feedback';
 import { useAntiCheat } from '@/hooks/use-anti-cheat';
 import { useToast } from '@/hooks/use-toast';
 import AnimatedToast from '@/components/ui/animated-toast';
@@ -51,7 +51,7 @@ const QuizGame: React.FC = () => {
   
   // Initialize hooks
   const { play, muted, toggleMute } = useSoundEffects();
-  const { trigger, enabled: hapticEnabled } = useHapticFeedback();
+  const { triggerHaptic } = useHapticFeedback();
   const { toast } = useToast();
   const answerTimeRef = useRef<number | null>(null);
   
@@ -161,7 +161,7 @@ const QuizGame: React.FC = () => {
     if (selectedOption === currentQuizQuestion.correctAnswer) {
       // User selected correct answer, but they don't know yet
       play('notification');
-      trigger('medium');
+      triggerHaptic('medium');
     } else {
       // User selected wrong answer, but they don't know yet
       play('click');

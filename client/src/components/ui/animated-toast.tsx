@@ -10,7 +10,7 @@ import {
   VolumeX
 } from 'lucide-react';
 import { useSoundEffects } from '@/hooks/use-sound-effects';
-import { useHapticFeedback } from '@/hooks/use-haptic-feedback';
+import { useHapticFeedback, HapticFeedbackPattern } from '@/hooks/use-haptic-feedback';
 
 export type ToastVariant = 'success' | 'error' | 'warning' | 'info';
 
